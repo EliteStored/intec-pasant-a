@@ -11,7 +11,7 @@
 		distorted="true"
 		bg="false"
 		css="font-size:50px; font-weight:bold; color:#FFFFFF;"
-		scale="0.2"
+		scale="1"
 		txtshadow="0 1 10 0x000000 0.7"
 		renderer="webgl"
 		oversampling="2"
@@ -210,7 +210,7 @@
 
 		 delayedcall(1, set(hotspot[spot5].enabled, true)); 
         "/>
-		<hotspot name="entrada" style="roomspot" tooltip="get:scene[scene_R0010090].title" onclick="scene3dtransition(scene_R0010090);">
+		<hotspot name="entrada" style="roomspottext" tooltip="get:scene[scene_R0010090].title" onclick="scene3dtransition(scene_R0010090);">
 			<point ath="-9.4320880" atv="-10.3528695" />
 			<point ath="-32.7292879" atv="-10.0043450" />
 			<point ath="-32.5078942" atv="0.0000000" />
@@ -229,13 +229,13 @@
 		<image prealign="0|0.0|0">
 			<cube url="panos/R0010090.tiles/%s/l%l/%v/l%l_%s_%v_%h.jpg" multires="512,768,1664" />
 		</image>
-		<hotspot name="pasillo2" style="roomspot" tooltip="get:scene[scene_R0010092].title" onclick="scene3dtransition(scene_R0010092);">
+		<hotspot name="pasillo2" style="roomspotext" tooltip="get:scene[scene_R0010092].title" onclick="scene3dtransition(scene_R0010092);">
 			<point ath="21.2516574" atv="-15.5901798" />
 			<point ath="-25.2909159" atv="-11.9486023" />
 			<point ath="-24.7942852" atv="7.3281943" />
 			<point ath="21.0722223" atv="11.3624019" />
 		</hotspot>
-		<hotspot name="pasillo3" style="roomspot" tooltip="get:scene[scene_R0010089].title" onclick="scene3dtransition(scene_R0010089);">
+		<hotspot name="pasillo3" style="roomspotext" tooltip="get:scene[scene_R0010089].title" onclick="scene3dtransition(scene_R0010089);">
 			<point ath="-168.4360049" atv="-8.6280297" />
 			<point ath="165.8067936" atv="-6.9901876" />
 			<point ath="165.8298664" atv="4.8033541" />

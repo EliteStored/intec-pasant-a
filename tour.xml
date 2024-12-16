@@ -1,4 +1,4 @@
-﻿<krpano version="1.21" title="Virtual Tour">
+<krpano version="1.21" title="Virtual Tour">
 
 	<plugin nam="toolbox" url="plugins/toolbox/toolboxV2.js" keep="true" preload="true"/>
 	<include url="skin/vtourskin.xml" />
@@ -10,8 +10,8 @@
 		enabled="false"
 		distorted="true"
 		bg="false"
-		css="font-size:50px; font-weight:bold; color:#FFFFFF;"
-		scale="2"
+		css="font-size:28px; font-weight:bold; color:#FFFFFF;"
+		scale="0.6"
 		txtshadow="0 1 10 0x000000 0.7"
 		renderer="webgl"
 		oversampling="2"

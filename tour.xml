@@ -10,7 +10,7 @@
 		enabled="false"
 		distorted="true"
 		bg="false"
-		css="font-size:28px; font-weight:bold; color:#FFFFFF;"
+		css="font-size:50px; font-weight:bold; color:#FFFFFF;"
 		scale="0.2"
 		txtshadow="0 1 10 0x000000 0.7"
 		renderer="webgl"
@@ -296,7 +296,7 @@
             delayedcall(1, set(hotspot[infoefiprinA].enabled, true)); 
         "
 		 scale="0.2" zoom="true" />
-		 <hotspot name="infoefiprinA" url="skin/informacíonfd.png" visible="false" scale="0.2" distorted= "true" ath="-171.5399628" atv="-20.0750286" enabled="false" 
+		 <hotspot name="infoefiprinA" url="skin/Informacíonfd.png" visible="false" scale="0.2" distorted= "true" ath="-171.5399628" atv="-20.0750286" enabled="false" 
 		 onclick="
 		 set(hotspot[infoefiprinA].enabled, false);  
 		 set(hotspot[infoefiprin].enabled, false); 
@@ -335,7 +335,7 @@
             delayedcall(1, set(hotspot[infoparqueoa].enabled, true)); 
         "
 		 scale="0.2" zoom="true" />
-		 <hotspot name="infoparqueoa" url="skin/informacíonGC.png" visible="false" scale="0.2" distorted= "true" ath="-27.5411674" atv="-10.6647627" enabled="false" 
+		 <hotspot name="infoparqueoa" url="skin/InformacíonGC.png" visible="false" scale="0.2" distorted= "true" ath="-27.5411674" atv="-10.6647627" enabled="false" 
 		 onclick="
 		 set(hotspot[infoparqueoa].enabled, false);  
 		 set(hotspot[infoparqueo1].enabled, false); 

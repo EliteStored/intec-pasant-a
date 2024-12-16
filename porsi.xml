@@ -1,0 +1,56 @@
+<action name="scene3dtransition" scope="local" args="scenename, hlookatoffset">
+    motionblur = 0.5;
+    transitiondelay = 0.0;
+    transitiontime = 0.5;
+    transitiontweentype = "easeoutquad";
+    
+    if(caller AND caller.ishotspot,
+        <!-- called from a hotspot, move toward the hotspot -->
+        if(caller.depth == 0,
+            <!-- 3d placed hotspot -->
+            set3dtransition("image", caller.tx,caller.ty,caller.tz, motionblur, hlookatoffset, transitiondelay, transitiontime, transitiontweentype);
+          ,
+            <!-- a hotspot with a spherical position -->
+            caller.getcenter(h,v);
+            if(v GT -50 AND v LT +50 AND caller.depth GT 120, set(v,0));
+            set3dtransition("sphere", h,v,(min(caller.depth,1000)), motionblur, hlookatoffset, transitiondelay, transitiontime, transitiontweentype);
+        );
+      ,
+        <!-- called from a layer or a script, recenter at the new pano center (3d-model/depthmap panos only) -->
+        if(image.depthmap.url,
+            set3dtransition("image", 0,0,0, motionblur, hlookatoffset, transitiondelay, transitiontime, transitiontweentype);
+        );
+    );
+    
+    loadscene(get(scenename), null, MERGE, BLEND(get(transitiontime),get(transitiontweentype)));
+</action>
+<!--onloaded="do_crop_animation(128,128, 60);" ath="+15" atv="-12" -->
+<!--
+<hotspot name="spotx" url="skin/infored2.webp" ath="xx" atv="yy"
+		onclick="	
+			set(hotspot[spotx].enabled, false);  
+            set(hotspot[spoty].enabled, false); 
+
+            tween(hotspot[spotx].alpha, 0, 1);  
+            tween(hotspot[spoty].alpha, 1, 1);  
+
+            set(hotspot[spotx].visible, false);  
+            set(hotspot[spoty].visible, true);  
+
+            delayedcall(1, set(hotspot[spoty].enabled, true)); 
+        "
+		 scale="0.2" zoom="true" />
+		 <hotspot name="spoty" url="skin/pru.jpeg" visible="false" scale="0.5" distorted= "true" ath="xx" atv="yy" enabled="false" 
+		 onclick="
+		 set(hotspot[spoty].enabled, false);  
+		 set(hotspot[spotx].enabled, false); 
+
+		 tween(hotspot[spoty].alpha, 0, 1);  
+		 tween(hotspot[spotx].alpha, 1, 1);  
+
+		 set(hotspot[spoty].visible, false);  
+		 set(hotspot[spotx].visible, true);  
+
+		 delayedcall(1, set(hotspot[spotx].enabled, true)); 
+        "/>
+-->

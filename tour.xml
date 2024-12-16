@@ -1,0 +1,431 @@
+﻿<krpano version="1.21" title="Virtual Tour">
+
+	<plugin nam="toolbox" url="plugins/toolbox/toolboxV2.js" keep="true" preload="true"/>
+	<include url="skin/vtourskin.xml" />
+	<style name="roomspot" alpha="0.0" capture="false" 
+			onloaded="addspottext(get(tooltip));"
+		/>
+	
+	<style name="roomspottext" 
+		enabled="false"
+		distorted="true"
+		bg="false"
+		css="font-size:28px; font-weight:bold; color:#FFFFFF;"
+		scale="0.2"
+		txtshadow="0 1 10 0x000000 0.7"
+		renderer="webgl"
+		oversampling="2"
+		mipmapping="true"
+		/> 
+	<action name="do_crop_animation" scope="local" args="framewidth, frameheight, framerate">
+		<!-- define local variables -->
+		calc(local.xframes, (caller.imagewidth /framewidth) BOR 0);
+		calc(local.frames, xframes * ((caller.imageheight / frameheight) BOR 0));
+		def(local.frame, integer, 0);
+		
+		<!-- set the first frame -->
+		calc(caller.crop, '0|0|' + framewidth + '|' + frameheight);
+		
+		<!-- do the animation -->
+		setinterval(calc('crop_anim_' + caller.name), calc(1.0 / framerate),
+			if(caller.loaded,
+				inc(frame);
+				if(frame GE frames, if(caller.onlastframe !== null, callwith(caller, onlastframe() ) ); set(frame,0); );
+				mod(xpos, frame, xframes);
+				div(ypos, frame, xframes);
+				Math.floor(ypos);
+				mul(xpos, framewidth);
+				mul(ypos, frameheight);
+				calc(caller.crop, xpos + '|' + ypos + '|' + framewidth + '|' + frameheight);
+			  ,
+				<!-- stop the interval when the hotspot gets removed -->
+				clearinterval(calc('crop_anim_' + caller.name));
+			);
+		);
+	</action>
+	<action name="place_floorspot_at_mouse_pos" scope="local">
+		set(d,1);
+		asyncloop(caller.loaded,
+			screentosphere(mouse.x,mouse.y, h,v);
+			spheretospace(h,v,d, x,y,z);
+			calc(fh, caller.floorheight_cm - view.ty + view.oy_rotated);
+			calc(x, x*fh/y);
+			calc(z, z*fh/y);
+			set(caller, tx=calc(view.tx - view.ox_rotated + x), tz=calc(view.tz - view.oz_rotated + z), ty=calc(view.ty - view.oy_rotated + fh));
+			<!-- optionally rotate the hotspot toward the target direction (e.g. for image-arrow-spots):
+			calc(caller.ry, atan2(x,z)*180/Math.PI);
+			-->
+			<!-- optionally fade out the spot when too far away:
+			calc(distance, sqrt(x*x + z*z));
+			calc(caller.alpha, distance LT 1000 ? 1.0 : 1.0-(distance-1000)/100);
+			-->
+		);
+	</action>
+	<action name="addspottext" scope="local" args="text">
+		addhotspot(calc(caller.name + '_text'),hs);
+		set(hs, type=text, text=get(text));
+		hs.loadstyle(roomspottext);
+		p = caller.getcenter();
+		hs.ath = p.x;
+		hs.atv = p.y;
+		hs.onclick = caller.onclick;
+		hs.enabled = webvr AND webvr.isenabled ? true : false;
+		caller.enabled = !hs.enabled;
+	</action>
+	<action name="scene3dtransition" scope="local" args="scenename, hlookatoffset">
+		motionblur = 0.5;
+		transitiondelay = 0.0;
+		transitiontime = 0.5;
+		transitiontweentype = "easeoutquad";
+		
+		if(caller AND caller.ishotspot,
+			<!-- called from a hotspot, move toward the hotspot -->
+			if(caller.depth == 0,
+				<!-- 3d placed hotspot -->
+				set3dtransition("image", caller.tx,caller.ty,caller.tz, motionblur, hlookatoffset, transitiondelay, transitiontime, transitiontweentype);
+			  ,
+				<!-- a hotspot with a spherical position -->
+				caller.getcenter(h,v);
+				if(v GT -50 AND v LT +50 AND caller.depth GT 120, set(v,0));
+				set3dtransition("sphere", h,v,(min(caller.depth,1000)), motionblur, hlookatoffset, transitiondelay, transitiontime, transitiontweentype);
+			);
+		  ,
+			<!-- called from a layer or a script, recenter at the new pano center (3d-model/depthmap panos only) -->
+			if(image.depthmap.url,
+				set3dtransition("image", 0,0,0, motionblur, hlookatoffset, transitiondelay, transitiontime, transitiontweentype);
+			);
+		);
+		
+		loadscene(get(scenename), null, MERGE, BLEND(get(transitiontime),get(transitiontweentype)));
+	</action>
+		<events
+		webvr_onentervr="roomspots_vr_mode(true);"
+		webvr_onexitvr="roomspots_vr_mode(false);"
+		/>
+	
+	<action name="roomspots_vr_mode" scope="local" args="is_vr_mode">
+		forall(hotspot, hs,
+			if(contains(hs.style, 'roomspottext'),
+				hs.enabled = is_vr_mode;
+			  ,contains(hs.style, 'roomspot'),
+				hs.enabled = !is_vr_mode;
+			);
+		);
+	</action>
+
+	<!-- customize skin settings: maps, gyro, webvr, thumbnails, tooltips, layout, design, ... -->
+	<skin_settings maps="true"
+	               maps_type="google"
+	               maps_bing_api_key=""
+	               maps_google_api_key=""
+	               maps_zoombuttons="false"
+	               maps_loadonfirstuse="true"
+	               gyro="true"
+	               gyro_keeplookingdirection="false"
+	               webvr="true"
+	               webvr_keeplookingdirection="true"
+	               webvr_prev_next_hotspots="true"
+	               autotour="false"
+	               littleplanetintro="false"
+	               followmousecontrol="false"
+	               title="true"
+	               thumbs="true"
+	               thumbs_width="120" thumbs_height="80" thumbs_padding="10" thumbs_crop="0|40|240|160"
+	               thumbs_opened="false"
+	               thumbs_text="false"
+	               thumbs_dragging="true"
+	               thumbs_onhoverscrolling="false"
+	               thumbs_scrollbuttons="false"
+	               thumbs_scrollindicator="false"
+	               thumbs_loop="false"
+	               tooltips_buttons="false"
+	               tooltips_thumbs="false"
+	               tooltips_hotspots="false"
+	               tooltips_mapspots="false"
+	               deeplinking="false"
+	               loadscene_flags="MERGE"
+	               loadscene_blend="OPENBLEND(0.5, 0.0, 0.75, 0.05, linear)"
+	               loadscene_blend_prev="SLIDEBLEND(0.5, 180, 0.75, linear)"
+	               loadscene_blend_next="SLIDEBLEND(0.5,   0, 0.75, linear)"
+	               loadingtext=""
+	               layout_width="100%"
+	               layout_maxwidth="814"
+	               controlbar_width="-24"
+	               controlbar_height="40"
+	               controlbar_offset="20"
+	               controlbar_offset_closed="-40"
+	               controlbar_overlap.no-fractionalscaling="10"
+	               controlbar_overlap.fractionalscaling="0"
+	               design_skin_images="vtourskin.png"
+	               design_bgcolor="0x2D3E50"
+	               design_bgalpha="0.8"
+	               design_bgborder="0"
+	               design_bgroundedge="1"
+	               design_bgshadow="0 4 10 0x000000 0.3"
+	               design_thumbborder_bgborder="3 0xFFFFFF 1.0"
+	               design_thumbborder_padding="2"
+	               design_thumbborder_bgroundedge="0"
+	               design_text_css="color:#FFFFFF; font-family:Arial;"
+	               design_text_shadow="1"
+	               />
+
+	
+
+
+	<scene name="scene_R0010089" title="Patio" onstart="" thumburl="panos/R0010089.tiles/thumb.jpg" lat="18.48767500" lng="-69.96366944" alt="22.39" heading="0.0">
+		
+		<control bouncinglimits="calc:image.cube ? true : false" />
+
+		<view hlookat="0.0" vlookat="0.0" fovtype="MFOV" fov="120" maxpixelzoom="2.0" fovmin="70" fovmax="140" limitview="auto" />
+
+		<preview url="panos/R0010089.tiles/preview.jpg" />
+
+		<image prealign="0|0.0|0">
+			<cube url="panos/R0010089.tiles/%s/l%l/%v/l%l_%s_%v_%h.jpg" multires="512,768,1664" />
+		</image>
+		<hotspot name="spot5" url="skin/infored2.webp" ath="-36.8717914" atv="-28.9595150"
+		onclick="	
+			set(hotspot[spot5].enabled, false);  
+            set(hotspot[spot3].enabled, false); 
+
+            tween(hotspot[spot5].alpha, 0, 1);  
+            tween(hotspot[spot3].alpha, 1, 1);  
+
+            set(hotspot[spot5].visible, false);  
+            set(hotspot[spot3].visible, true);  
+
+            delayedcall(1, set(hotspot[spot3].enabled, true)); 
+        "
+		 scale="0.2" zoom="true" />
+		 <hotspot name="spot3" url="skin/infointecri.png" visible="false" scale="0.2" distorted= "true" ath="-36.8717914" atv="-28.9595150" enabled="false" 
+		 onclick="
+		 set(hotspot[spot3].enabled, false);  
+		 set(hotspot[spot5].enabled, false); 
+
+		 tween(hotspot[spot3].alpha, 0, 1);  
+		 tween(hotspot[spot5].alpha, 1, 1);  
+
+		 set(hotspot[spot3].visible, false);  
+		 set(hotspot[spot5].visible, true);  
+
+		 delayedcall(1, set(hotspot[spot5].enabled, true)); 
+        "/>
+		<hotspot name="entrada" style="roomspot" tooltip="get:scene[scene_R0010090].title" onclick="scene3dtransition(scene_R0010090);">
+			<point ath="-9.4320880" atv="-10.3528695" />
+			<point ath="-32.7292879" atv="-10.0043450" />
+			<point ath="-32.5078942" atv="0.0000000" />
+			<point ath="-9.5838668" atv="0.7692471" />
+		</hotspot>
+	</scene>
+
+	<scene name="scene_R0010090" title="Edificio" onstart="" thumburl="panos/R0010090.tiles/thumb.jpg" lat="18.48770556" lng="-69.96343611" alt="23.30" heading="0.0">
+		
+		<control bouncinglimits="calc:image.cube ? true : false" />
+
+		<view hlookat="0.0" vlookat="0.0" fovtype="MFOV" fov="120" maxpixelzoom="2.0" fovmin="70" fovmax="140" limitview="auto" />
+
+		<preview url="panos/R0010090.tiles/preview.jpg" />
+
+		<image prealign="0|0.0|0">
+			<cube url="panos/R0010090.tiles/%s/l%l/%v/l%l_%s_%v_%h.jpg" multires="512,768,1664" />
+		</image>
+		<hotspot name="pasillo2" style="roomspot" tooltip="get:scene[scene_R0010092].title" onclick="scene3dtransition(scene_R0010092);">
+			<point ath="21.2516574" atv="-15.5901798" />
+			<point ath="-25.2909159" atv="-11.9486023" />
+			<point ath="-24.7942852" atv="7.3281943" />
+			<point ath="21.0722223" atv="11.3624019" />
+		</hotspot>
+		<hotspot name="pasillo3" style="roomspot" tooltip="get:scene[scene_R0010089].title" onclick="scene3dtransition(scene_R0010089);">
+			<point ath="-168.4360049" atv="-8.6280297" />
+			<point ath="165.8067936" atv="-6.9901876" />
+			<point ath="165.8298664" atv="4.8033541" />
+			<point ath="-168.0774023" atv="5.2930471" />
+		</hotspot>
+		<hotspot name="spota" url="skin/infored2.webp" ath="-129.8384999" atv="3.3267529"
+		onclick="	
+			set(hotspot[spota].enabled, false);  
+            set(hotspot[spot11].enabled, false); 
+
+            tween(hotspot[spota].alpha, 0, 1);  
+            tween(hotspot[spot11].alpha, 1, 1);  
+
+            set(hotspot[spota].visible, false);  
+            set(hotspot[spot11].visible, true);  
+
+            delayedcall(1, set(hotspot[spot11].enabled, true)); 
+        "
+		 scale="0.2" zoom="true" />
+		 <hotspot name="spot11" url="skin/informacionAHHH.png" visible="false" scale="0.2" distorted= "true" ath="-129.8384999" atv="3.3267529" enabled="false" 
+		 onclick="
+		 set(hotspot[spot11].enabled, false);  
+		 set(hotspot[spota].enabled, false); 
+
+		 tween(hotspot[spot11].alpha, 0, 1);  
+		 tween(hotspot[spota].alpha, 1, 1);  
+
+		 set(hotspot[spot11].visible, false);  
+		 set(hotspot[spota].visible, true);  
+
+		 delayedcall(1, set(hotspot[spota].enabled, true)); 
+        "/>
+
+	</scene>
+
+	<scene name="scene_R0010092" title="Parqueo" onstart="" thumburl="panos/R0010092.tiles/thumb.jpg" lat="18.48785000" lng="-69.96324167" alt="27.07" heading="0.0">
+		
+		<control bouncinglimits="calc:image.cube ? true : false" />
+
+		<view hlookat="0.0" vlookat="0.0" fovtype="MFOV" fov="120" maxpixelzoom="2.0" fovmin="70" fovmax="140" limitview="auto" />
+
+		<preview url="panos/R0010092.tiles/preview.jpg" />
+
+		<image prealign="0|0.0|0">
+			<cube url="panos/R0010092.tiles/%s/l%l/%v/l%l_%s_%v_%h.jpg" multires="512,768,1664" />
+		</image>
+		<hotspot name="infoefiprin" url="skin/infored2.webp" ath="-171.5399628" atv="-20.0750286"
+		onclick="	
+			set(hotspot[infoefiprin].enabled, false);  
+            set(hotspot[infoefiprinA].enabled, false); 
+
+            tween(hotspot[infoefiprin].alpha, 0, 1);  
+            tween(hotspot[infoefiprinA].alpha, 1, 1);  
+
+            set(hotspot[infoefiprin].visible, false);  
+            set(hotspot[infoefiprinA].visible, true);  
+
+            delayedcall(1, set(hotspot[infoefiprinA].enabled, true)); 
+        "
+		 scale="0.2" zoom="true" />
+		 <hotspot name="infoefiprinA" url="skin/informacíonfd.png" visible="false" scale="0.2" distorted= "true" ath="-171.5399628" atv="-20.0750286" enabled="false" 
+		 onclick="
+		 set(hotspot[infoefiprinA].enabled, false);  
+		 set(hotspot[infoefiprin].enabled, false); 
+
+		 tween(hotspot[infoefiprinA].alpha, 0, 1);  
+		 tween(hotspot[infoefiprin].alpha, 1, 1);  
+
+		 set(hotspot[infoefiprinA].visible, false);  
+		 set(hotspot[infoefiprin].visible, true);  
+
+		 delayedcall(1, set(hotspot[infoefiprin].enabled, true)); 
+        "/>
+		<hotspot name="edif" style="roomspot" tooltip="get:scene[scene_R0010090].title" onclick="scene3dtransition(scene_R0010090);">
+			<point ath="108.1687172" atv="-8.6819299" />
+			<point ath="107.5773755" atv="-0.6407925" />
+			<point ath="89.5104238" atv="-0.9791289" />
+			<point ath="89.1813715" atv="-8.7625489" />
+		</hotspot>
+		<hotspot name="cafet" style="roomspot" tooltip="get:scene[scene_R0010093].title" onclick="scene3dtransition(scene_R0010093);">
+			<point ath="-48.2083916" atv="-12.5805255" />
+			<point ath="-95.9882130" atv="-12.5805255" />
+			<point ath="-95.2138270" atv="4.7215485" />
+			<point ath="-48.3828138" atv="3.7053979" />
+		</hotspot>
+		<hotspot name="infoparqueo1" url="skin/infored2.webp" ath="-27.5411674" atv="-10.6647627"
+		onclick="	
+			set(hotspot[infoparqueo1].enabled, false);  
+            set(hotspot[infoparqueoa].enabled, false); 
+
+            tween(hotspot[infoparqueo1].alpha, 0, 1);  
+            tween(hotspot[infoparqueoa].alpha, 1, 1);  
+
+            set(hotspot[infoparqueo1].visible, false);  
+            set(hotspot[infoparqueoa].visible, true);  
+
+            delayedcall(1, set(hotspot[infoparqueoa].enabled, true)); 
+        "
+		 scale="0.2" zoom="true" />
+		 <hotspot name="infoparqueoa" url="skin/informacíonGC.png" visible="false" scale="0.2" distorted= "true" ath="-27.5411674" atv="-10.6647627" enabled="false" 
+		 onclick="
+		 set(hotspot[infoparqueoa].enabled, false);  
+		 set(hotspot[infoparqueo1].enabled, false); 
+
+		 tween(hotspot[infoparqueoa].alpha, 0, 1);  
+		 tween(hotspot[infoparqueo1].alpha, 1, 1);  
+
+		 set(hotspot[infoparqueoa].visible, false);  
+		 set(hotspot[infoparqueo1].visible, true);  
+
+		 delayedcall(1, set(hotspot[infoparqueo1].enabled, true)); 
+        "/>
+	
+
+
+	</scene>
+
+	<scene name="scene_R0010093" title="Cafetería" onstart="" thumburl="panos/R0010093.tiles/thumb.jpg" lat="18.48782500" lng="-69.96297778" alt="27.00" heading="0.0">
+		
+		<control bouncinglimits="calc:image.cube ? true : false" />
+
+		<view hlookat="0.0" vlookat="0.0" fovtype="MFOV" fov="120" maxpixelzoom="2.0" fovmin="70" fovmax="140" limitview="auto" />
+
+		<preview url="panos/R0010093.tiles/preview.jpg" />
+
+		<image prealign="0|0.0|0">
+			<cube url="panos/R0010093.tiles/%s/l%l/%v/l%l_%s_%v_%h.jpg" multires="512,768,1664" />
+		</image>
+		<hotspot name="Parque" style="roomspot" tooltip="get:scene[scene_R0010092].title" onclick="scene3dtransition(scene_R0010092);">
+			<point ath="-158.6444255" atv="3.9454382" />
+			<point ath="-159.2458639" atv="-12.7673272" />
+			<point ath="154.4893885" atv="-15.5090679" />
+			<point ath="153.5818058" atv="5.4380269" />
+		</hotspot>
+		<hotspot name="spot51" url="skin/infored2.webp" ath="-3.8856613" atv="-18.6318326"
+		onclick="	
+			set(hotspot[spot51].enabled, false);  
+            set(hotspot[spot5a].enabled, false); 
+
+            tween(hotspot[spot51].alpha, 0, 1);  
+            tween(hotspot[spot5a].alpha, 1, 1);  
+
+            set(hotspot[spot51].visible, false);  
+            set(hotspot[spot5a].visible, true);  
+
+            delayedcall(1, set(hotspot[spot5a].enabled, true)); 
+        "
+		 scale="0.2" zoom="true" />
+		 <hotspot name="spot5a" url="skin/edficiobacano.png" visible="false" scale="0.2" distorted= "true" ath="-3.8856613" atv="-18.6318326" enabled="false" 
+		 onclick="
+		 set(hotspot[spot5a].enabled, false);  
+		 set(hotspot[spot51].enabled, false); 
+
+		 tween(hotspot[spot5a].alpha, 0, 1);  
+		 tween(hotspot[spot51].alpha, 1, 1);  
+
+		 set(hotspot[spot5a].visible, false);  
+		 set(hotspot[spot51].visible, true);  
+
+		 delayedcall(1, set(hotspot[spot51].enabled, true)); 
+        "/>
+		<hotspot name="spot52" url="skin/infored2.webp" ath="-24.0008657" atv="-0.4249711"
+		onclick="	
+			set(hotspot[spot52].enabled, false);  
+            set(hotspot[spot5b].enabled, false); 
+
+            tween(hotspot[spot52].alpha, 0, 1);  
+            tween(hotspot[spot5b].alpha, 1, 1);  
+
+            set(hotspot[spot52].visible, false);  
+            set(hotspot[spot5b].visible, true);  
+
+            delayedcall(1, set(hotspot[spot5b].enabled, true)); 
+        "
+		 scale="0.2" zoom="true" />
+		 <hotspot name="spot5b" url="skin/cafesanto.png" visible="false" scale="0.2" distorted= "true" ath="-24.0008657" atv="-0.4249711" enabled="false" 
+		 onclick="
+		 set(hotspot[spot5b].enabled, false);  
+		 set(hotspot[spot52].enabled, false); 
+
+		 tween(hotspot[spot5b].alpha, 0, 1);  
+		 tween(hotspot[spot52].alpha, 1, 1);  
+
+		 set(hotspot[spot5b].visible, false);  
+		 set(hotspot[spot52].visible, true);  
+
+		 delayedcall(1, set(hotspot[spot52].enabled, true)); 
+        "/>
+
+	</scene>
+
+
+</krpano>

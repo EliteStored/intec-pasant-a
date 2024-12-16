@@ -255,7 +255,7 @@
             delayedcall(1, set(hotspot[spot11].enabled, true)); 
         "
 		 scale="0.2" zoom="true" />
-		 <hotspot name="spot11" url="skin/informacionAHHH.png" visible="false" scale="0.2" distorted= "true" ath="-129.8384999" atv="3.3267529" enabled="false" 
+		 <hotspot name="spot11" url="skin/InformacionAHHH.png" visible="false" scale="0.2" distorted= "true" ath="-129.8384999" atv="3.3267529" enabled="false" 
 		 onclick="
 		 set(hotspot[spot11].enabled, false);  
 		 set(hotspot[spota].enabled, false); 
